@@ -18,6 +18,32 @@ class AudioService {
   bool _musicStarted = false;
 
   Future<void> preload() async {
+    // Configure a global audio context. This is required on iOS so the game
+    // integrates properly with the system audio session and matches Android's
+    // default behaviour (respects the media volume, mixes with other apps,
+    // does not force-stop the user's music).
+    try {
+      await AudioPlayer.global.setAudioContext(
+        AudioContext(
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.ambient,
+            options: const {
+              AVAudioSessionOptions.mixWithOthers,
+            },
+          ),
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: false,
+            stayAwake: false,
+            contentType: AndroidContentType.music,
+            usageType: AndroidUsageType.game,
+            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+          ),
+        ),
+      );
+    } catch (_) {
+      // If setting the audio context fails for any reason, fall back to the
+      // plugin defaults instead of blocking startup.
+    }
     for (final p in _pool) {
       await p.setReleaseMode(ReleaseMode.stop);
     }
