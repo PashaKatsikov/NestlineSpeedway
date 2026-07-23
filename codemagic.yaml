@@ -1,0 +1,65 @@
+## Codemagic CI/CD configuration for Nestline Speedway (Flutter, iOS).
+##
+## Signing is fully automatic via an App Store Connect API key.
+## Before running this workflow you must, in the Codemagic web UI:
+##   1. Go to  Teams → <your team> → Integrations → App Store Connect
+##      and connect your App Store Connect API key
+##      (you need the .p8 key file, the Key ID and the Issuer ID).
+##   2. Give that integration the name below and keep it identical here:
+##          integrations → app_store_connect: "Nestline ASC API Key"
+##      (If you named it differently in Codemagic, change the string below.)
+##
+## Codemagic will then create / fetch the signing certificate and the
+## provisioning profile for the bundle id automatically — you do NOT need to
+## upload any .p12 or .mobileprovision files manually.
+
+workflows:
+  ios-release:
+    name: iOS Release (App Store / TestFlight)
+    # M-series mac is required for modern Xcode + Flutter builds.
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      # --- App Store Connect API key integration (configured in the UI) ---
+      integrations:
+        app_store_connect: Nestline ASC API Key
+      # --- Automatic iOS code signing ---
+      ios_signing:
+        # Use "app_store" for TestFlight / App Store uploads.
+        # Change to "ad_hoc" if you only want to install on registered devices.
+        distribution_type: app_store
+        bundle_identifier: com.nestline.speedwaygame
+      vars:
+        BUNDLE_ID: "com.nestline.speedwaygame"
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
+      - name: Build IPA
+        script: |
+          flutter build ipa --release \
+            --build-name=1.0.0 \
+            --build-number=1 \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+    publishing:
+      # Uncomment to auto-upload to TestFlight after a successful build.
+      # app_store_connect:
+      #   auth: integration
+      #   submit_to_testflight: true
+      email:
+        recipients:
+          # Change to the address that should receive build results.
+          - maratpolj@gmail.com
+        notify:
+          success: true
+          failure: true
