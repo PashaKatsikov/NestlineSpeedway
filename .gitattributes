@@ -1,0 +1,3 @@
+# Keep Xcode project files byte-exact across OSes (no BOM / CRLF rewrites).
+*.pbxproj -text
+*.pbxproj binary

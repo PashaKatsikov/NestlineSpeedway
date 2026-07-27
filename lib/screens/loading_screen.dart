@@ -1,18 +1,30 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_colors.dart';
 import '../core/app_theme.dart';
 import '../core/sprites.dart';
 import '../main.dart';
+import '../pitlane/core/race_models.dart';
+import '../pitlane/pages/no_signal_page.dart';
+import '../pitlane/pages/signal_invite.dart';
+import '../pitlane/pages/track_portal.dart';
+import '../pitlane/race_coordinator.dart';
 import '../state/game_state.dart';
 import '../widgets/common.dart';
 import 'home_screen.dart';
 
+/// Boot / loading screen. Visually unchanged from the white game, but it also
+/// runs the gray-flow routing decision in parallel with game init and then
+/// routes to the game (organic), the WebView portal (attributed) or the
+/// no-internet screen. It IS the splash — no second loading screen is shown.
 class LoadingScreen extends StatefulWidget {
-  const LoadingScreen({super.key});
+  const LoadingScreen({super.key, this.coordinator});
+
+  final RaceCoordinator? coordinator;
 
   @override
   State<LoadingScreen> createState() => _LoadingScreenState();
@@ -21,7 +33,9 @@ class LoadingScreen extends StatefulWidget {
 class _LoadingScreenState extends State<LoadingScreen> {
   double _progress = 0;
   bool _initDone = false;
+  bool _decisionReady = false;
   bool _navigated = false;
+  RouteOutcome? _outcome;
   Timer? _ticker;
   final Stopwatch _watch = Stopwatch()..start();
   bool _precached = false;
@@ -29,7 +43,19 @@ class _LoadingScreenState extends State<LoadingScreen> {
   @override
   void initState() {
     super.initState();
+    // Coming back from an immersive gray screen (e.g. Retry) — restore the
+    // normal system bars and both orientations for the loading visual.
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
+    SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     _startInit();
+    _startDecision();
     // ~25 fps smooth driver.
     _ticker = Timer.periodic(const Duration(milliseconds: 40), (_) => _drive());
   }
@@ -45,22 +71,37 @@ class _LoadingScreenState extends State<LoadingScreen> {
     } catch (_) {
       // Never block startup on init errors — the game must open offline.
     }
-    // Safety: even if something stalled, proceed.
     _initDone = true;
+  }
+
+  Future<void> _startDecision() async {
+    final coordinator = widget.coordinator;
+    if (coordinator == null) {
+      _outcome = const NativeLane();
+      _decisionReady = true;
+      return;
+    }
+    try {
+      _outcome = await coordinator.decide(onProgress: (_) {});
+    } catch (_) {
+      _outcome = const NativeLane();
+    }
+    _decisionReady = true;
   }
 
   void _drive() {
     final ms = _watch.elapsedMilliseconds;
-    // Nominal eased climb to 0.92 across ~2.4s so the bar fills in stages.
     final t = (ms / 2400).clamp(0.0, 1.0);
     final nominal = Curves.easeInOut.transform(t) * 0.92;
-    // Hard safety: force completion path by 8s no matter what.
-    final forced = ms > 8000;
-    final target = (_initDone || forced) ? 1.0 : nominal;
+    // Complete once BOTH game init and the routing decision are ready.
+    final ready = _initDone && _decisionReady;
+    // Hard safety net so the bar can never park forever.
+    final forced = ms > 20000;
+    final target = (ready || forced) ? 1.0 : nominal;
     setState(() {
       _progress += (target - _progress) * 0.16;
       if (_progress > target) _progress = target;
-      if ((_initDone || forced) && _progress > 0.992) {
+      if ((ready || forced) && _progress > 0.992) {
         _progress = 1.0;
       }
     });
@@ -72,8 +113,18 @@ class _LoadingScreenState extends State<LoadingScreen> {
   }
 
   Future<void> _finish() async {
+    final outcome = _outcome ?? const NativeLane();
+    if (!mounted) return;
+    if (outcome is PortalLane) {
+      await _openPortal(outcome);
+      return;
+    }
+    if (outcome is OfflineLane) {
+      _openOffline();
+      return;
+    }
+    // Organic / gate disabled → the white game.
     await lockLandscape();
-    // Brief beat at 100% so the full bar is visible right before launch.
     await Future.delayed(const Duration(milliseconds: 260));
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
@@ -81,6 +132,51 @@ class _LoadingScreenState extends State<LoadingScreen> {
         transitionDuration: const Duration(milliseconds: 500),
         pageBuilder: (_, a, _) =>
             FadeTransition(opacity: a, child: const HomeScreen()),
+      ),
+    );
+  }
+
+  Future<void> _openPortal(PortalLane outcome) async {
+    final coordinator = widget.coordinator;
+    if (coordinator == null) return;
+    Widget portalBuilder(BuildContext _) => TrackPortal(
+      url: outcome.url,
+      coldLaunch: outcome.coldLaunch,
+      vault: coordinator.vault,
+      probe: coordinator.probe,
+      notifications: coordinator.notifications,
+      agent: coordinator.agent,
+    );
+
+    if (coordinator.vault.shouldShowPushInvite &&
+        await coordinator.notifications.canOfferPermission()) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => SignalInvite(
+            vault: coordinator.vault,
+            notifications: coordinator.notifications,
+            nextBuilder: portalBuilder,
+          ),
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute<void>(builder: portalBuilder));
+  }
+
+  void _openOffline() {
+    final coordinator = widget.coordinator;
+    if (coordinator == null) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => NoSignalPage(
+          probe: coordinator.probe,
+          retryBuilder: (_) => LoadingScreen(coordinator: coordinator),
+        ),
       ),
     );
   }
@@ -142,8 +238,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   }
 
   Widget _buildOverlay(BoxConstraints c, bool portrait, int pct) {
-    final barWidth =
-        portrait ? c.maxWidth * 0.72 : c.maxWidth * 0.42;
+    final barWidth = portrait ? c.maxWidth * 0.72 : c.maxWidth * 0.42;
     final barHeight = portrait ? 22.0 : 15.0;
     final loadingSize = portrait ? 30.0 : 22.0;
     final pctSize = portrait ? 22.0 : 17.0;
@@ -158,8 +253,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
           children: [
             _LoadingLabel(fontSize: loadingSize),
             SizedBox(height: portrait ? 16 : 10),
-            _LoadingBar(
-                width: barWidth, height: barHeight, progress: _progress),
+            _LoadingBar(width: barWidth, height: barHeight, progress: _progress),
             SizedBox(height: portrait ? 12 : 8),
             Text(
               '$pct%',

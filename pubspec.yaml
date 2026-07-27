@@ -1,5 +1,5 @@
 name: nestline_speedway
-description: "A new Flutter project."
+description: "Nestline Speedway — chicken farm & mini-games."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -37,7 +37,20 @@ dependencies:
   provider: ^6.1.5+1
   shared_preferences: ^2.5.5
   webview_flutter: ^4.14.1
+  webview_flutter_wkwebview: ^3.22.0
   audioplayers: ^6.8.1
+
+  # Gray-flow stack (attribution / push / networking / storage).
+  appsflyer_sdk: ^6.18.0
+  app_tracking_transparency: ^2.0.6+1
+  firebase_core: ^4.11.0
+  firebase_messaging: ^16.4.0
+  firebase_app_check: ^0.4.5
+  connectivity_plus: ^7.1.1
+  http: ^1.6.0
+  device_info_plus: ^11.4.0
+  flutter_secure_storage: ^10.3.1
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -75,10 +88,7 @@ flutter:
     - assets/Nestline_Speedway_sounds_assets/
     - assets/music/
     - assets/web/
-    - assets/Nestline_Speedway_additional_assets/Icon.png
-    - assets/Nestline_Speedway_additional_assets/Game_Name.webp
-    - assets/Nestline_Speedway_additional_assets/Vertical_Loading_Screen.webp
-    - assets/Nestline_Speedway_additional_assets/Horizontal_Loading_Screen.webp
+    - assets/Nestline_Speedway_additional_assets/
 
   fonts:
     - family: Fredoka
