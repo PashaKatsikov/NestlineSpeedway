@@ -2,33 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'core/app_theme.dart';
-import 'core/sfx.dart';
-import 'screens/loading_screen.dart';
-import 'services/audio_service.dart';
-import 'state/game_state.dart';
+import 'audio/audio_service.dart';
+import 'core/theme.dart';
+import 'state/game.dart';
+import 'ui/screens/loading_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Loading screen may be portrait or landscape; gameplay locks to landscape
-  // later (handled when leaving the loading screen).
+
+  // Startup deliberately runs unlocked so the loading screen can present itself
+  // in whichever way the phone is being held. LoadingScreen locks to landscape
+  // once the game is ready, because the race HUD needs the width.
   await SystemChrome.setPreferredOrientations(const [
     DeviceOrientation.portraitUp,
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
-  runApp(const NestlineApp());
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+  runApp(const NestlineSpeedwayApp());
 }
 
-class NestlineApp extends StatefulWidget {
-  const NestlineApp({super.key});
+class NestlineSpeedwayApp extends StatefulWidget {
+  const NestlineSpeedwayApp({super.key});
 
   @override
-  State<NestlineApp> createState() => _NestlineAppState();
+  State<NestlineSpeedwayApp> createState() => _NestlineSpeedwayAppState();
 }
 
-class _NestlineAppState extends State<NestlineApp>
+class _NestlineSpeedwayAppState extends State<NestlineSpeedwayApp>
     with WidgetsBindingObserver {
+  final Game _game = Game();
+
   @override
   void initState() {
     super.initState();
@@ -38,46 +43,33 @@ class _NestlineAppState extends State<NestlineApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    AudioService.instance.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.hidden) {
-      AudioService.instance.pauseMusic();
-    } else if (state == AppLifecycleState.resumed) {
-      AudioService.instance.resumeMusic();
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.detached:
+        AudioService.instance.pauseMusic();
+      case AppLifecycleState.resumed:
+        if (_game.musicOn) AudioService.instance.resumeMusic();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => GameState(),
+    return ChangeNotifierProvider<Game>.value(
+      value: _game,
       child: MaterialApp(
         title: 'Nestline Speedway',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.theme,
+        theme: AppTheme.dark,
         home: const LoadingScreen(),
       ),
     );
   }
-}
-
-/// Locks the app to landscape once gameplay begins.
-Future<void> lockLandscape() async {
-  await SystemChrome.setPreferredOrientations(const [
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
-}
-
-/// Warm up the audio players and start the looping background music once
-/// (safe to call from the loading screen).
-Future<void> warmUpAudio() async {
-  await AudioService.instance.preload();
-  // Fire-and-forget: background music loops forever, in parallel with SFX.
-  AudioService.instance.startMusic(Music.theme);
 }

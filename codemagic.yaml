@@ -38,14 +38,19 @@ workflows:
       - name: Get Flutter packages
         script: |
           flutter pub get
+      - name: Analyze and test
+        script: |
+          flutter analyze
+          flutter test
       - name: Set up code signing settings on Xcode project
         script: |
           xcode-project use-profiles
       - name: Build IPA
+        # Version and build number come from pubspec.yaml so there is a single
+        # place to bump them. A duplicate build number is rejected by App Store
+        # Connect, so bump pubspec before re-running this workflow.
         script: |
           flutter build ipa --release \
-            --build-name=1.0.0 \
-            --build-number=1 \
             --export-options-plist=/Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
