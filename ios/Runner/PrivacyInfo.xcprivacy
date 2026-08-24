@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	Nestline Speedway collects nothing. It runs entirely offline: no ads, no
+	analytics, no attribution, no crash reporting, no accounts, no network
+	requests of any kind. The only persisted data is the player's own save
+	file (birds, pedigree, season progress, settings), written locally via
+	shared_preferences and never transmitted anywhere. See assets/web/privacy.html
+	(bundled in the app) for the full policy this manifest matches.
+	-->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array/>
+</dict>
+</plist>

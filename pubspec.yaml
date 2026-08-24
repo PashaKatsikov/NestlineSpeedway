@@ -6,7 +6,10 @@ publish_to: 'none'
 
 # Bumped to 2.0.0 because the app was rebuilt from the ground up as a racing
 # game; nothing but the art and the name carried over from 1.0.0.
-version: 2.0.0+2
+# 2.0.1: resubmission after the Aug 2026 Guideline 5.6 rejection. Removed the
+# WebView-based Privacy/Support screens in favour of native ones and added
+# ios/Runner/PrivacyInfo.xcprivacy.
+version: 2.0.1+3
 
 environment:
   sdk: ^3.12.2
