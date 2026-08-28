@@ -3,12 +3,11 @@
 <plist version="1.0">
 <dict>
 	<!--
-	Nestline Speedway collects nothing. It runs entirely offline: no ads, no
-	analytics, no attribution, no crash reporting, no accounts, no network
-	requests of any kind. The only persisted data is the player's own save
-	file (birds, pedigree, season progress, settings), written locally via
-	shared_preferences and never transmitted anywhere. See assets/docs/policy.html
-	(bundled in the app) for the full policy this manifest matches.
+	Nestline Speedway collects nothing. Gameplay is offline: no ads, no
+	analytics, no attribution, no crash reporting, no accounts. The only
+	network use is Settings opening the hosted Privacy Policy and Support
+	pages. Save data stays on device via shared_preferences.
+	See https://nestlinnespeedway.com/privacy-policy.html
 	-->
 	<key>NSPrivacyTracking</key>
 	<false/>

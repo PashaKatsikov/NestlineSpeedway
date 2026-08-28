@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- No INTERNET permission: the game is fully offline and the only web views
-         it opens are HTML files bundled in the APK. Debug and profile builds add
-         the permission themselves so hot reload still works. -->
+    <!-- Used only by Settings → Privacy / Support, which load the hosted HTML
+         pages. Gameplay itself does not talk to the network. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Nestline Speedway"
         android:name="${applicationName}"

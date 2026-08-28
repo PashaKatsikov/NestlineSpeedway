@@ -59,7 +59,7 @@ class OptionsScreen extends StatelessWidget {
                       stageRoute(
                         const DocumentScreen(
                           title: 'Privacy policy',
-                          asset: 'assets/docs/policy.html',
+                          url: DocumentScreen.privacyUrl,
                         ),
                       ),
                     ),
@@ -73,7 +73,7 @@ class OptionsScreen extends StatelessWidget {
                       stageRoute(
                         const DocumentScreen(
                           title: 'Help & support',
-                          asset: 'assets/docs/help.html',
+                          url: DocumentScreen.supportUrl,
                         ),
                       ),
                     ),

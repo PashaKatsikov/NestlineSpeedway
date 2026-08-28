@@ -6,27 +6,22 @@ rejection received on Aug 19, 2026 for submission `848be217-78a3-4e4a-880d-054ae
 
 ---
 
-Nestline Speedway is a fully offline, single-player racing/breeding game built
-with Flutter. It contains no ad SDK, no analytics or attribution SDK, no
-remote configuration, no server-side feature flags, and makes no network
-request of any kind at any point during use. All gameplay logic (the
+Nestline Speedway is a single-player racing/breeding game built with Flutter.
+It contains no ad SDK, no analytics or attribution SDK, no remote
+configuration, and no server-side feature flags. All gameplay logic (the
 turn-based race engine, the Mendelian genetics/breeding simulation, and
 season progression) runs entirely on-device from a local seeded RNG, and all
-game state is persisted only to local device storage (`shared_preferences`)
-— nothing is ever transmitted anywhere.
+game state is persisted only to local device storage (`shared_preferences`).
 
 The app has exactly two screens that use an embedded WebView: Settings →
-Privacy Policy and Settings → Help & Support. Both load a static HTML file
-that ships inside the app bundle itself (`assets/docs/policy.html` and
-`assets/docs/help.html`); nothing is fetched from a server, JavaScript is
-disabled in both WebViews, and there is no redirect or dynamically served
-content anywhere in the app. Every other screen is native Flutter UI.
+Privacy Policy and Settings → Help & Support. They load the public pages
+https://nestlinnespeedway.com/privacy-policy.html and
+https://nestlinnespeedway.com/support.html. No other screen talks to the
+network. Every other screen is native Flutter UI.
 
-This build is 2.0.1 (build 4). It includes a privacy manifest (`PrivacyInfo.xcprivacy`,
-`NSPrivacyTracking = false`, no data types collected) that matches the bundled
-privacy policy. The gameplay, the two bundled HTML documents, and the offline
-model are unchanged from the previous submission; the Dart module layout was
-rewritten so this binary is a distinct compilation from the rejected one.
+This build is 2.0.1 (build 4). It includes a privacy manifest
+(`PrivacyInfo.xcprivacy`, `NSPrivacyTracking = false`, no data types
+collected) that matches the hosted privacy policy.
 
 We reviewed our own source end to end and could not find any hidden, gated,
 A/B-tested, or remotely toggled functionality — the app behaves identically
