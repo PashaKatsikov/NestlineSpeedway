@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.nestline.nestline_speedway"
+    namespace = "com.nestline.circuit"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

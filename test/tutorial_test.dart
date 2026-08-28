@@ -1,43 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nestline_speedway/core/theme.dart';
-import 'package:nestline_speedway/state/game.dart';
-import 'package:nestline_speedway/tutorial/lesson.dart';
-import 'package:nestline_speedway/ui/widgets/coach_mark.dart';
+import 'package:nestline_circuit/app/look.dart';
+import 'package:nestline_circuit/session/director.dart';
+import 'package:nestline_circuit/walkthrough/guide.dart';
+import 'package:nestline_circuit/view/widgets/guide_overlay.dart';
 import 'package:provider/provider.dart';
 
 import 'support.dart';
 
-Future<Game> bootedGame() async {
+Future<Director> bootedGame() async {
   freshSave();
-  final game = Game();
+  final game = Director();
   await game.boot();
   return game;
 }
 
 /// A screen with two things worth pointing at.
 Widget harness({
-  required Game game,
+  required Director game,
   required bool active,
   required VoidCallback onDone,
 }) {
   final first = GlobalKey();
   final second = GlobalKey();
 
-  return ChangeNotifierProvider<Game>.value(
+  return ChangeNotifierProvider<Director>.value(
     value: game,
     child: MaterialApp(
-      theme: AppTheme.dark,
-      home: CoachOverlay(
+      theme: Look.dark,
+      home: GuideOverlay(
         active: active,
         onDone: onDone,
         steps: [
-          CoachStep(
+          GuideBeat(
             anchor: first,
             title: 'The first thing',
             body: 'Look here.',
           ),
-          CoachStep(
+          GuideBeat(
             anchor: second,
             title: 'The second thing',
             body: 'Now look here.',
@@ -62,13 +62,13 @@ void main() {
       final game = await bootedGame();
 
       expect(game.needsIntro, isTrue);
-      for (final lesson in Lesson.values) {
-        expect(game.needsLesson(lesson), isTrue, reason: lesson.name);
+      for (final lesson in Guide.values) {
+        expect(game.needsGuide(lesson), isTrue, reason: lesson.name);
       }
 
-      game.completeLesson(Lesson.race);
-      expect(game.needsLesson(Lesson.race), isFalse);
-      expect(game.needsLesson(Lesson.stable), isTrue);
+      game.completeGuide(Guide.race);
+      expect(game.needsGuide(Guide.race), isFalse);
+      expect(game.needsGuide(Guide.stable), isTrue);
 
       game.completeIntro();
       expect(game.needsIntro, isFalse);
@@ -77,44 +77,44 @@ void main() {
     test('progress survives a reload', () async {
       final game = await bootedGame();
       game.completeIntro();
-      game.completeLesson(Lesson.hatchery);
+      game.completeGuide(Guide.hatchery);
 
-      // completeLesson persists in the background rather than making callers
+      // completeGuide persists in the background rather than making callers
       // await it, so let the write land before reading it back.
       await pumpEventQueue();
 
-      final reloaded = Game();
+      final reloaded = Director();
       await reloaded.boot();
 
       expect(reloaded.needsIntro, isFalse);
-      expect(reloaded.needsLesson(Lesson.hatchery), isFalse);
-      expect(reloaded.needsLesson(Lesson.race), isTrue);
+      expect(reloaded.needsGuide(Guide.hatchery), isFalse);
+      expect(reloaded.needsGuide(Guide.race), isTrue);
     });
 
     test('replaying re-arms everything', () async {
       final game = await bootedGame();
       game.completeIntro();
-      for (final lesson in Lesson.values) {
-        game.completeLesson(lesson);
+      for (final lesson in Guide.values) {
+        game.completeGuide(lesson);
       }
 
-      game.replayTutorial();
+      game.replayWalkthrough();
 
       expect(game.needsIntro, isTrue);
-      for (final lesson in Lesson.values) {
-        expect(game.needsLesson(lesson), isTrue, reason: lesson.name);
+      for (final lesson in Guide.values) {
+        expect(game.needsGuide(lesson), isTrue, reason: lesson.name);
       }
     });
 
     test('founding a new stable brings the walkthrough back', () async {
       final game = await bootedGame();
       game.completeIntro();
-      game.completeLesson(Lesson.stable);
+      game.completeGuide(Guide.stable);
 
       await game.resetEverything();
 
       expect(game.needsIntro, isTrue);
-      expect(game.needsLesson(Lesson.stable), isTrue);
+      expect(game.needsGuide(Guide.stable), isTrue);
     });
   });
 
@@ -186,15 +186,15 @@ void main() {
       final tall = GlobalKey();
       final game = await bootedGame();
       await tester.pumpWidget(
-        ChangeNotifierProvider<Game>.value(
+        ChangeNotifierProvider<Director>.value(
           value: game,
           child: MaterialApp(
-            theme: AppTheme.dark,
-            home: CoachOverlay(
+            theme: Look.dark,
+            home: GuideOverlay(
               active: true,
               onDone: () {},
               steps: [
-                CoachStep(
+                GuideBeat(
                   anchor: tall,
                   title: 'The tall thing',
                   body:

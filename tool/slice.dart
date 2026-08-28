@@ -219,7 +219,7 @@ void main() {
     items = attachSmall(items, sheet.bigFrac, sheet.noiseFrac);
     items = orderGrid(items);
 
-    final outDir = Directory('assets/gen/${sheet.outName}')
+    final outDir = Directory('assets/cut/${sheet.outName}')
       ..createSync(recursive: true);
     final crops = <img.Image>[];
     for (int i = 0; i < items.length; i++) {

@@ -7,7 +7,7 @@
 	analytics, no attribution, no crash reporting, no accounts, no network
 	requests of any kind. The only persisted data is the player's own save
 	file (birds, pedigree, season progress, settings), written locally via
-	shared_preferences and never transmitted anywhere. See assets/web/privacy.html
+	shared_preferences and never transmitted anywhere. See assets/docs/policy.html
 	(bundled in the app) for the full policy this manifest matches.
 	-->
 	<key>NSPrivacyTracking</key>

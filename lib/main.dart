@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'audio/audio_service.dart';
-import 'core/theme.dart';
-import 'state/game.dart';
-import 'ui/screens/loading_screen.dart';
+import 'package:nestline_circuit/app/mixer.dart';
+import 'package:nestline_circuit/app/look.dart';
+import 'package:nestline_circuit/session/director.dart';
+import 'package:nestline_circuit/view/screens/boot_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Startup deliberately runs unlocked so the loading screen can present itself
-  // in whichever way the phone is being held. LoadingScreen locks to landscape
+  // in whichever way the phone is being held. BootScreen locks to landscape
   // once the game is ready, because the race HUD needs the width.
   await SystemChrome.setPreferredOrientations(const [
     DeviceOrientation.portraitUp,
@@ -20,19 +20,19 @@ Future<void> main() async {
   ]);
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  runApp(const NestlineSpeedwayApp());
+  runApp(const CircuitApp());
 }
 
-class NestlineSpeedwayApp extends StatefulWidget {
-  const NestlineSpeedwayApp({super.key});
+class CircuitApp extends StatefulWidget {
+  const CircuitApp({super.key});
 
   @override
-  State<NestlineSpeedwayApp> createState() => _NestlineSpeedwayAppState();
+  State<CircuitApp> createState() => _CircuitAppState();
 }
 
-class _NestlineSpeedwayAppState extends State<NestlineSpeedwayApp>
+class _CircuitAppState extends State<CircuitApp>
     with WidgetsBindingObserver {
-  final Game _game = Game();
+  final Director _game = Director();
 
   @override
   void initState() {
@@ -43,7 +43,7 @@ class _NestlineSpeedwayAppState extends State<NestlineSpeedwayApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    AudioService.instance.dispose();
+    Mixer.instance.dispose();
     super.dispose();
   }
 
@@ -54,21 +54,21 @@ class _NestlineSpeedwayAppState extends State<NestlineSpeedwayApp>
       case AppLifecycleState.inactive:
       case AppLifecycleState.hidden:
       case AppLifecycleState.detached:
-        AudioService.instance.pauseMusic();
+        Mixer.instance.pauseMusic();
       case AppLifecycleState.resumed:
-        if (_game.musicOn) AudioService.instance.resumeMusic();
+        if (_game.scoreOn) Mixer.instance.resumeMusic();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<Game>.value(
+    return ChangeNotifierProvider<Director>.value(
       value: _game,
       child: MaterialApp(
         title: 'Nestline Speedway',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark,
-        home: const LoadingScreen(),
+        theme: Look.dark,
+        home: const BootScreen(),
       ),
     );
   }

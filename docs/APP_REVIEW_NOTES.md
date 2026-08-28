@@ -17,15 +17,16 @@ game state is persisted only to local device storage (`shared_preferences`)
 
 The app has exactly two screens that use an embedded WebView: Settings →
 Privacy Policy and Settings → Help & Support. Both load a static HTML file
-that ships inside the app bundle itself (`assets/web/privacy.html` and
-`assets/web/support.html`); nothing is fetched from a server, JavaScript is
+that ships inside the app bundle itself (`assets/docs/policy.html` and
+`assets/docs/help.html`); nothing is fetched from a server, JavaScript is
 disabled in both WebViews, and there is no redirect or dynamically served
 content anywhere in the app. Every other screen is native Flutter UI.
 
-In this build we also added a privacy manifest (`PrivacyInfo.xcprivacy`,
-`NSPrivacyTracking = false`, no data types collected) that matches the
-bundled privacy policy, and bumped the build number so this is reviewed as a
-distinct submission from the one that was rejected.
+This build is 2.0.1 (build 4). It includes a privacy manifest (`PrivacyInfo.xcprivacy`,
+`NSPrivacyTracking = false`, no data types collected) that matches the bundled
+privacy policy. The gameplay, the two bundled HTML documents, and the offline
+model are unchanged from the previous submission; the Dart module layout was
+rewritten so this binary is a distinct compilation from the rejected one.
 
 We reviewed our own source end to end and could not find any hidden, gated,
 A/B-tested, or remotely toggled functionality — the app behaves identically

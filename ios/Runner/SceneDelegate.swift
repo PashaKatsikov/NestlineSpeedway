@@ -1,6 +1,6 @@
 import Flutter
 import UIKit
 
-class SceneDelegate: FlutterSceneDelegate {
+class CircuitSceneDelegate: FlutterSceneDelegate {
 
 }

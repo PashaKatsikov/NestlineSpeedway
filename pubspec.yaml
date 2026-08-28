@@ -1,4 +1,4 @@
-name: nestline_speedway
+name: nestline_circuit
 description: >-
   Nestline Speedway — a tactical racing roguelike where your command deck is the
   genome of the birds you breed. Offline, no ads, no in-app purchases.
@@ -6,10 +6,8 @@ publish_to: 'none'
 
 # Bumped to 2.0.0 because the app was rebuilt from the ground up as a racing
 # game; nothing but the art and the name carried over from 1.0.0.
-# 2.0.1: resubmission after the Aug 2026 Guideline 5.6 rejection. Removed the
-# WebView-based Privacy/Support screens in favour of native ones and added
-# ios/Runner/PrivacyInfo.xcprivacy.
-version: 2.0.1+3
+# 2.0.1+4: internal module layout rewrite; Privacy/Support still load bundled HTML.
+version: 2.0.1+4
 
 environment:
   sdk: ^3.12.2
@@ -37,23 +35,23 @@ flutter:
 
   assets:
     # Cut sprites. The source sheets live in tool/sheets/ and are not shipped.
-    - assets/gen/chicken/
-    - assets/gen/egg/
-    - assets/gen/food/
-    - assets/gen/care/
-    - assets/gen/reward/
-    - assets/gen/coop/
-    - assets/gen/toy/
-    - assets/gen/feather/
-    - assets/gen/plant/
-    - assets/gen/accessory/
-    - assets/gen/misc/
+    - assets/cut/chicken/
+    - assets/cut/egg/
+    - assets/cut/food/
+    - assets/cut/care/
+    - assets/cut/reward/
+    - assets/cut/coop/
+    - assets/cut/toy/
+    - assets/cut/feather/
+    - assets/cut/plant/
+    - assets/cut/accessory/
+    - assets/cut/misc/
     # Racing plates and scene backdrops.
-    - assets/art/
-    - assets/art/tracks/
-    - assets/sfx/
-    - assets/music/
-    - assets/web/
+    - assets/plates/
+    - assets/plates/tracks/
+    - assets/cues/
+    - assets/score/
+    - assets/docs/
     - assets/brand/logo.png
 
   fonts:
@@ -75,4 +73,4 @@ flutter_launcher_icons:
   min_sdk_android: 21
   remove_alpha_ios: true
   adaptive_icon_background: "assets/brand/app_icon.png"
-  adaptive_icon_foreground: "assets/gen/misc/transparent.png"
+  adaptive_icon_foreground: "assets/cut/misc/transparent.png"

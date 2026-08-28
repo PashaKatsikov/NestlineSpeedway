@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nestline_speedway/core/rng.dart';
-import 'package:nestline_speedway/genetics/genome.dart';
-import 'package:nestline_speedway/race/command_library.dart';
-import 'package:nestline_speedway/race/entrant.dart';
-import 'package:nestline_speedway/race/race_engine.dart';
-import 'package:nestline_speedway/race/rival.dart';
-import 'package:nestline_speedway/race/status.dart';
-import 'package:nestline_speedway/race/track.dart';
+import 'package:nestline_circuit/app/dice.dart';
+import 'package:nestline_circuit/blood/heredity.dart';
+import 'package:nestline_circuit/heat/maneuvers.dart';
+import 'package:nestline_circuit/heat/contender.dart';
+import 'package:nestline_circuit/heat/engine.dart';
+import 'package:nestline_circuit/heat/rival.dart';
+import 'package:nestline_circuit/heat/status.dart';
+import 'package:nestline_circuit/heat/track.dart';
 
-Phenotype pheno({
+Build pheno({
   int stamina = 60,
   int stride = 4,
   int effort = 3,
@@ -24,7 +24,7 @@ Phenotype pheno({
     'draft',
     'hold_line',
   ],
-}) => Phenotype(
+}) => Build(
   staminaMax: stamina,
   stride: stride,
   effort: effort,
@@ -33,13 +33,13 @@ Phenotype pheno({
   recovery: recovery,
   hand: hand,
   momentumGain: momentumGain,
-  commandIds: commands,
+  maneuverIds: commands,
   expressedTraits: const [],
   pureTraits: const [],
   synergies: const [],
 );
 
-Entrant player({Phenotype? p, int lane = 1}) => Entrant(
+Contender player({Build? p, int lane = 1}) => Contender(
   id: 'player',
   name: 'Hen',
   phenotype: p ?? pheno(),
@@ -48,12 +48,12 @@ Entrant player({Phenotype? p, int lane = 1}) => Entrant(
   isPlayer: true,
 );
 
-Entrant rival({
+Contender rival({
   String id = 'rival_0',
   String archetype = 'pacer',
-  Phenotype? p,
+  Build? p,
   int lane = 0,
-}) => Entrant(
+}) => Contender(
   id: id,
   name: 'Rival',
   phenotype: p ?? pheno(),
@@ -73,29 +73,29 @@ Track flatTrack({
   laps: 1,
 );
 
-RaceEngine engineWith({
+HeatEngine engineWith({
   Track? track,
-  Entrant? me,
-  List<Entrant>? rivals,
+  Contender? me,
+  List<Contender>? rivals,
   int seed = 1,
-}) => RaceEngine(
+}) => HeatEngine(
   track: track ?? flatTrack(),
   player: me ?? player(),
   rivals: rivals ?? [rival()],
-  rng: Rng(seed),
+  rng: Dice(seed),
 );
 
-int handIndexOf(RaceEngine e, String commandId) =>
+int handIndexOf(HeatEngine e, String commandId) =>
     e.hand.indexWhere((id) => id == commandId);
 
 /// Forces [commandId] into the player's hand so a test can play it on demand.
-void stackHand(RaceEngine e, String commandId) {
+void stackHand(HeatEngine e, String commandId) {
   e.hand.insert(0, commandId);
 }
 
 /// The engine owns the starting grid, so tests that need a specific geometry
 /// place the rival themselves once the race exists.
-Entrant putRival(RaceEngine e, {required int lane, required double distance}) {
+Contender putRival(HeatEngine e, {required int lane, required double distance}) {
   final r = e.rivals.first;
   r.lane = lane;
   r.distance = distance;
@@ -130,7 +130,7 @@ void main() {
         me: player(p: pheno(hand: 2, commands: ['push', 'push', 'steady'])),
       );
       for (var turn = 0; turn < 12; turn++) {
-        if (e.phase == RacePhase.finished) break;
+        if (e.phase == HeatPhase.finished) break;
         expect(e.hand, isNotEmpty, reason: 'ran out of cards on turn $turn');
         e.endTurn();
       }
@@ -165,10 +165,10 @@ void main() {
       );
       for (var i = 0; i < 10; i++) {
         stackHand(e, 'push');
-        if (e.phase == RacePhase.finished) break;
+        if (e.phase == HeatPhase.finished) break;
         e.play(0);
       }
-      expect(e.player.momentum, lessThanOrEqualTo(RaceEngine.momentumCap));
+      expect(e.player.momentum, lessThanOrEqualTo(HeatEngine.momentumCap));
     });
 
     test('a blown bird covers half the ground', () {
@@ -227,7 +227,7 @@ void main() {
         me: player(lane: 0),
         rivals: [rival(id: 'ahead')],
       );
-      putRival(e, lane: e.player.lane, distance: RaceEngine.draftWindow + 5);
+      putRival(e, lane: e.player.lane, distance: HeatEngine.draftWindow + 5);
       expect(e.isDrafting, isFalse);
     });
 
@@ -380,8 +380,8 @@ void main() {
         rivals: [rival(id: 'bruiser_0', archetype: 'bruiser')],
       );
       e.player.addStatus(Status.guard, 1);
-      putRival(e, lane: e.player.lane, distance: 1).intent = const Intent(
-        IntentKind.clip,
+      putRival(e, lane: e.player.lane, distance: 1).intent = const Telegraph(
+        TelegraphKind.clip,
       );
       e.endTurn();
       expect(e.player.status(Status.ruffled), 0);
@@ -393,8 +393,8 @@ void main() {
         rivals: [rival(id: 'bruiser_0', archetype: 'bruiser')],
       );
       e.player.momentum = 3;
-      putRival(e, lane: e.player.lane, distance: 1).intent = const Intent(
-        IntentKind.clip,
+      putRival(e, lane: e.player.lane, distance: 1).intent = const Telegraph(
+        TelegraphKind.clip,
       );
       e.endTurn();
       expect(e.player.momentum, lessThan(3));
@@ -436,7 +436,7 @@ void main() {
       );
       stackHand(e, 'push');
       e.play(0);
-      expect(e.phase, RacePhase.finished);
+      expect(e.phase, HeatPhase.finished);
       final places = e.entrants.map((x) => x.placement).toList();
       expect(places.toSet().length, places.length);
       expect(e.result.placement, 1);
@@ -445,14 +445,14 @@ void main() {
 
     test('a race always terminates within the turn cap', () {
       for (var seed = 0; seed < 25; seed++) {
-        final rng = Rng(seed);
+        final rng = Dice(seed);
         final venue = Venue.all[seed % Venue.all.length];
-        final e = RaceEngine(
+        final e = HeatEngine(
           track: Track.generate(venue, rng, laps: 2),
           player: player(
-            p: Phenotype.of(Genome.random(rng, recessiveBias: 0.2)),
+            p: Build.of(Heredity.random(rng, recessiveBias: 0.2)),
           ),
-          rivals: RivalFactory.field(
+          rivals: FieldFactory.field(
             count: 4,
             grade: seed % 8,
             playerRating: 120,
@@ -461,7 +461,7 @@ void main() {
           rng: rng,
         );
         var guard = 0;
-        while (e.phase == RacePhase.racing && guard < 200) {
+        while (e.phase == HeatPhase.racing && guard < 200) {
           // Play whatever is affordable, then pass the turn.
           for (var i = e.hand.length - 1; i >= 0; i--) {
             if (e.canPlay(i)) e.play(i);
@@ -469,7 +469,7 @@ void main() {
           e.endTurn();
           guard++;
         }
-        expect(e.phase, RacePhase.finished, reason: 'seed $seed hung');
+        expect(e.phase, HeatPhase.finished, reason: 'seed $seed hung');
         expect(e.entrants.every((x) => x.placement > 0), isTrue);
       }
     });
@@ -481,27 +481,27 @@ void main() {
           rivals: [rival(id: 'r', archetype: archetype)],
         );
         var guard = 0;
-        while (e.phase == RacePhase.racing && guard < 80) {
+        while (e.phase == HeatPhase.racing && guard < 80) {
           for (final r in e.rivals) {
             if (!r.finished) expect(r.intent, isNotNull);
           }
           e.endTurn();
           guard++;
         }
-        expect(e.phase, RacePhase.finished, reason: '$archetype hung');
+        expect(e.phase, HeatPhase.finished, reason: '$archetype hung');
       }
     });
   });
 
   group('command library', () {
     test('every referenced command id resolves to a real command', () {
-      for (final command in Commands.all) {
-        expect(Commands.byId(command.id).id, command.id);
+      for (final command in Maneuvers.all) {
+        expect(Maneuvers.byId(command.id).id, command.id);
       }
     });
 
     test('every command in the library can resolve without throwing', () {
-      for (final command in Commands.all) {
+      for (final command in Maneuvers.all) {
         final e = engineWith(
           me: player(p: pheno(stamina: 200, effort: 12, hand: 5)),
           rivals: [rival(id: 'x', lane: 0)],
@@ -516,7 +516,7 @@ void main() {
     });
 
     test('no command leaves stamina or momentum out of range', () {
-      for (final command in Commands.all) {
+      for (final command in Maneuvers.all) {
         final e = engineWith(
           me: player(p: pheno(stamina: 90, effort: 12)),
           rivals: [rival(id: 'x', lane: 0)],
@@ -524,7 +524,7 @@ void main() {
         stackHand(e, command.id);
         e.play(0, lane: 0);
         expect(e.player.stamina, inInclusiveRange(0, e.player.staminaMax));
-        expect(e.player.momentum, inInclusiveRange(0, RaceEngine.momentumCap));
+        expect(e.player.momentum, inInclusiveRange(0, HeatEngine.momentumCap));
       }
     });
   });

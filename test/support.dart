@@ -1,13 +1,13 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nestline_speedway/meta/save.dart';
+import 'package:nestline_circuit/yard/vault.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// An empty save, on an empty store, with the audio plugin stubbed out.
 void freshSave() {
   silenceAudio();
   SharedPreferences.setMockInitialValues({});
-  SaveService.instance.forgetStore();
+  Vault.instance.forgetStore();
 }
 
 /// Stubs the audio plugin so a test can boot the game.

@@ -22,18 +22,18 @@ but the codex, stable upgrades and pedigree persist.
 
 | Path | What lives there |
 | --- | --- |
-| `lib/core/` | Palette, typography, theme, sprite registry, seeded RNG, SFX ids |
-| `lib/genetics/` | Loci and alleles, diploid genome, meiosis, pedigree and inbreeding, `Racer`, hatchery |
-| `lib/race/` | Track and terrain, entrants, statuses, commands and library, rival AI, `RaceEngine` |
-| `lib/season/` | Season map generation, tack and consumables, trader/training encounters, run state |
-| `lib/meta/` | Persistent `Stable`, codex, stable upgrades, `SaveService` |
-| `lib/state/game.dart` | The single `ChangeNotifier` that drives every screen |
-| `lib/ui/` | `widgets/` for the kit, `screens/` for each destination |
+| `lib/app/` | Pigment, type, look, sprite atlas, seeded dice, cue ids, mixer |
+| `lib/blood/` | Loci and alleles, diploid heredity, meiosis, bloodline and inbreeding, `Runner`, brooder |
+| `lib/heat/` | Track and terrain, contenders, statuses, maneuvers, rival AI, `HeatEngine` |
+| `lib/campaign/` | Circuit book generation, tack and consumables, trader/training encounters, run state |
+| `lib/yard/` | Persistent `Yard`, ledger, yard works, `Vault` |
+| `lib/session/director.dart` | The single `ChangeNotifier` that drives every screen |
+| `lib/view/` | `widgets/` for the kit, `screens/` for each destination |
 | `tool/` | One-off Dart scripts used to slice the source sprite sheets; not shipped |
 
-Two rules keep the dependency graph clean: game logic never imports anything from `lib/ui/`,
-and commands talk to the simulation through the `RaceApi` interface in `lib/race/command.dart`
-rather than importing `RaceEngine` directly.
+Two rules keep the dependency graph clean: game logic never imports anything from `lib/view/`,
+and maneuvers talk to the simulation through the `HeatApi` interface in `lib/heat/maneuver.dart`
+rather than importing `HeatEngine` directly.
 
 ## Running it
 
@@ -53,13 +53,13 @@ flutter analyze
 
 ## Assets
 
-Shipped art is pre-sliced into `assets/gen/<category>/`. The source sheets live in
+Shipped art is pre-sliced into `assets/cut/<category>/`. The source sheets live in
 `tool/sheets/` and are deliberately excluded from `pubspec.yaml`, so they add nothing to the
 bundle. To re-cut a sheet, edit the coordinates in `tool/slice.dart` and run it with `dart run`.
 
 ## Save data
 
-`SaveService` writes one versioned JSON blob through `shared_preferences`. It stays on the
+`Vault` writes one versioned JSON blob through `shared_preferences`. It stays on the
 device, is never uploaded, and can be wiped from Settings. When you change the shape of
-anything persisted, bump `SaveService.schemaVersion` and handle the older version on load — an
+anything persisted, bump `Vault.schemaVersion` and handle the older version on load — an
 unreadable save is discarded rather than crashing the app.

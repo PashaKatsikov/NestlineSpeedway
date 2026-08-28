@@ -4,27 +4,27 @@ import 'package:provider/provider.dart';
 
 import 'support.dart';
 
-import 'package:nestline_speedway/core/theme.dart';
-import 'package:nestline_speedway/race/race_engine.dart';
-import 'package:nestline_speedway/season/season_map.dart';
-import 'package:nestline_speedway/state/game.dart';
-import 'package:nestline_speedway/ui/screens/about_screen.dart';
-import 'package:nestline_speedway/ui/screens/codex_screen.dart';
-import 'package:nestline_speedway/ui/screens/flock_screen.dart';
-import 'package:nestline_speedway/tutorial/lesson.dart';
-import 'package:nestline_speedway/ui/screens/hatchery_screen.dart';
-import 'package:nestline_speedway/ui/screens/intro_screen.dart';
-import 'package:nestline_speedway/ui/screens/loading_screen.dart';
-import 'package:nestline_speedway/ui/screens/race_screen.dart';
-import 'package:nestline_speedway/ui/screens/rest_screen.dart';
-import 'package:nestline_speedway/ui/screens/result_screen.dart';
-import 'package:nestline_speedway/ui/screens/season_screen.dart';
-import 'package:nestline_speedway/ui/screens/settings_screen.dart';
-import 'package:nestline_speedway/ui/screens/stable_screen.dart';
-import 'package:nestline_speedway/ui/screens/title_screen.dart';
-import 'package:nestline_speedway/ui/screens/trader_screen.dart';
-import 'package:nestline_speedway/ui/screens/training_screen.dart';
-import 'package:nestline_speedway/ui/screens/upgrades_screen.dart';
+import 'package:nestline_circuit/app/look.dart';
+import 'package:nestline_circuit/heat/engine.dart';
+import 'package:nestline_circuit/campaign/nodes.dart';
+import 'package:nestline_circuit/session/director.dart';
+import 'package:nestline_circuit/view/screens/primer_screen.dart';
+import 'package:nestline_circuit/view/screens/ledger_screen.dart';
+import 'package:nestline_circuit/view/screens/runners_screen.dart';
+import 'package:nestline_circuit/walkthrough/guide.dart';
+import 'package:nestline_circuit/view/screens/brooder_screen.dart';
+import 'package:nestline_circuit/view/screens/opening_screen.dart';
+import 'package:nestline_circuit/view/screens/boot_screen.dart';
+import 'package:nestline_circuit/view/screens/heat_screen.dart';
+import 'package:nestline_circuit/view/screens/recover_screen.dart';
+import 'package:nestline_circuit/view/screens/payout_screen.dart';
+import 'package:nestline_circuit/view/screens/campaign_screen.dart';
+import 'package:nestline_circuit/view/screens/options_screen.dart';
+import 'package:nestline_circuit/view/screens/yard_screen.dart';
+import 'package:nestline_circuit/view/screens/menu_screen.dart';
+import 'package:nestline_circuit/view/screens/merchant_screen.dart';
+import 'package:nestline_circuit/view/screens/drill_screen.dart';
+import 'package:nestline_circuit/view/screens/works_screen.dart';
 
 /// The game is landscape-only, so these are the shapes it actually has to
 /// survive: the shortest phone we support, a current phone, and an iPad.
@@ -42,28 +42,28 @@ const Map<String, Size> _portraitViewports = {
   'tablet upright': Size(834, 1210),
 };
 
-Future<Game> _bootedGame() async {
+Future<Director> _bootedGame() async {
   freshSave();
-  final game = Game();
+  final game = Director();
   await game.boot();
   // Screens are tested bare by default. The walkthrough draws over the top of
   // them, so it gets its own set of cases rather than colouring every one.
   game.stable.introSeen = true;
-  for (final lesson in Lesson.values) {
-    game.completeLesson(lesson);
+  for (final lesson in Guide.values) {
+    game.completeGuide(lesson);
   }
   return game;
 }
 
 /// Re-arms one walkthrough so the screen builds with its coach marks showing.
-void _teach(Game game, Lesson lesson) =>
-    game.stable.lessonsSeen.remove(lesson.name);
+void _teach(Director game, Guide lesson) =>
+    game.stable.guidesSeen.remove(lesson.name);
 
-Future<void> _show(WidgetTester tester, Game game, Widget screen) async {
+Future<void> _show(WidgetTester tester, Director game, Widget screen) async {
   await tester.pumpWidget(
-    ChangeNotifierProvider<Game>.value(
+    ChangeNotifierProvider<Director>.value(
       value: game,
-      child: MaterialApp(theme: AppTheme.dark, home: screen),
+      child: MaterialApp(theme: Look.dark, home: screen),
     ),
   );
   await tester.pump(const Duration(milliseconds: 350));
@@ -78,7 +78,7 @@ Future<void> _show(WidgetTester tester, Game game, Widget screen) async {
 void screenTest(
   String name,
   Widget Function() build, {
-  void Function(Game game)? prepare,
+  void Function(Director game)? prepare,
   Map<String, Size> viewports = _viewports,
 }) {
   group(name, () {
@@ -100,7 +100,7 @@ void screenTest(
 }
 
 /// Puts the game into a live season with the whole stable entered.
-void _inSeason(Game game) {
+void _inSeason(Director game) {
   game.startSeason(game.stable.racers.map((r) => r.id).toList());
 }
 
@@ -109,7 +109,7 @@ void _inSeason(Game game) {
 ///
 /// Row 0 is always the opening sprint and the map is randomised, so this steps
 /// forward node by node and starts a fresh season if a route runs out.
-void _atNode(Game game, NodeKind kind) {
+void _atNode(Director game, StopKind kind) {
   for (var attempt = 0; attempt < 60; attempt++) {
     _inSeason(game);
     final season = game.season!;
@@ -126,44 +126,44 @@ void _atNode(Game game, NodeKind kind) {
 }
 
 void main() {
-  screenTest('loading', () => const LoadingScreen());
+  screenTest('loading', () => const BootScreen());
   screenTest(
     'loading upright',
-    () => const LoadingScreen(),
+    () => const BootScreen(),
     viewports: _portraitViewports,
   );
 
-  screenTest('title', () => const TitleScreen());
-  screenTest('stable', () => const StableScreen());
-  screenTest('settings', () => const SettingsScreen());
-  screenTest('about', () => const AboutScreen());
-  screenTest('flock', () => const FlockScreen());
-  screenTest('hatchery', () => const HatcheryScreen());
-  screenTest('upgrades', () => const UpgradesScreen());
-  screenTest('codex', () => const CodexScreen());
+  screenTest('title', () => const MenuScreen());
+  screenTest('stable', () => const YardScreen());
+  screenTest('settings', () => const OptionsScreen());
+  screenTest('about', () => const PrimerScreen());
+  screenTest('flock', () => const RunnersScreen());
+  screenTest('hatchery', () => const BrooderScreen());
+  screenTest('upgrades', () => const WorksScreen());
+  screenTest('codex', () => const LedgerScreen());
 
-  screenTest('season entry', () => const SeasonScreen());
-  screenTest('season map', () => const SeasonScreen(), prepare: _inSeason);
+  screenTest('season entry', () => const CampaignScreen());
+  screenTest('season map', () => const CampaignScreen(), prepare: _inSeason);
 
   screenTest(
     'trader',
-    () => const TraderScreen(),
-    prepare: (game) => _atNode(game, NodeKind.trader),
+    () => const MerchantScreen(),
+    prepare: (game) => _atNode(game, StopKind.trader),
   );
   screenTest(
     'training',
-    () => const TrainingScreen(),
-    prepare: (game) => _atNode(game, NodeKind.training),
+    () => const DrillScreen(),
+    prepare: (game) => _atNode(game, StopKind.training),
   );
   screenTest(
     'rest',
-    () => const RestScreen(),
-    prepare: (game) => _atNode(game, NodeKind.rest),
+    () => const RecoverScreen(),
+    prepare: (game) => _atNode(game, StopKind.rest),
   );
 
   screenTest(
     'race',
-    () => const RaceScreen(),
+    () => const HeatScreen(),
     prepare: (game) {
       _inSeason(game);
       final node = game.season!.available.first;
@@ -174,7 +174,7 @@ void main() {
 
   screenTest(
     'result',
-    () => const ResultScreen(),
+    () => const PayoutScreen(),
     prepare: (game) {
       _inSeason(game);
       final node = game.season!.available.first;
@@ -182,7 +182,7 @@ void main() {
       game.startRace(node);
       // Run the race out so the screen has a finishing order to show.
       for (var turn = 0; turn < 400; turn++) {
-        if (game.engine!.phase == RacePhase.finished) break;
+        if (game.engine!.phase == HeatPhase.finished) break;
         game.endTurn();
       }
     },
@@ -190,35 +190,35 @@ void main() {
 
   // ------------------------------------------------------------- walkthrough
 
-  screenTest('intro', () => const IntroScreen());
+  screenTest('intro', () => const OpeningScreen());
 
   screenTest(
     'coached stable',
-    () => const StableScreen(),
-    prepare: (game) => _teach(game, Lesson.stable),
+    () => const YardScreen(),
+    prepare: (game) => _teach(game, Guide.stable),
   );
   screenTest(
     'coached hatchery',
-    () => const HatcheryScreen(),
-    prepare: (game) => _teach(game, Lesson.hatchery),
+    () => const BrooderScreen(),
+    prepare: (game) => _teach(game, Guide.hatchery),
   );
   screenTest(
     'coached schedule',
-    () => const SeasonScreen(),
+    () => const CampaignScreen(),
     prepare: (game) {
       _inSeason(game);
-      _teach(game, Lesson.schedule);
+      _teach(game, Guide.schedule);
     },
   );
   screenTest(
     'coached race',
-    () => const RaceScreen(),
+    () => const HeatScreen(),
     prepare: (game) {
       _inSeason(game);
       final node = game.season!.available.first;
       game.travelTo(node);
       game.startRace(node);
-      _teach(game, Lesson.race);
+      _teach(game, Guide.race);
     },
   );
 }
